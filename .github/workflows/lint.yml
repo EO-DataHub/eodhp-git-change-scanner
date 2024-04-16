@@ -1,0 +1,17 @@
+name: Lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
+        with:
+          options: "--line-length 100 --check --verbose"
+      - uses: chartboost/ruff-action@v1
+      - name: Install isort
+        run: pip install isort
+      - name: Run isort
+        run: isort . --check --diff --ignore-whitespace --profile black
