@@ -38,17 +38,18 @@ class Scanner:
 
         self.initialise_s3()
 
-        dictionary = kwargs["kwargs"]
-        self.harvester_id = dictionary.get("harvester-id", None)
-        self.s3_bucket_name = dictionary["s3_bucket"]
-        self.repo_name = urllib.parse.urlparse(dictionary["repourl"]).path.strip("/")
-        self.branch = dictionary.get("branch", "main")
-        self.workspace = dictionary.get("workspace_namespace", "workspace")
-        self.local_folder = dictionary["dest"]
-        self.target = dictionary.get("target", None)
+        args = kwargs["kwargs"]
+        self.harvester_id = args.get("harvester-id", None)
+        self.s3_bucket_name = args["s3_bucket"]
+        self.repo_name = urllib.parse.urlparse(args["repourl"]).path.strip("/")
+        self.branch = args.get("branch", "main")
+        self.workspace = args.get("workspace_namespace", "workspace")
+        self.local_folder = args["dest"]
+        self.source = args.get("source", "/")
+        self.target = args.get("target", None)
 
         self.s3_prefix = "/".join(
-            [dictionary["s3_prefix"], self.workspace, self.repo_name, self.branch]
+            [args["s3_prefix"], self.workspace, self.repo_name, self.branch]
         )
 
     def initialise_s3(self):
@@ -76,7 +77,7 @@ class Scanner:
                 "added_keys": self.added_files,
                 "updated_keys": self.updated_files,
                 "deleted_keys": self.deleted_files,
-                "source": "/",
+                "source": self.source,
                 "target": self.target,
             }
 
