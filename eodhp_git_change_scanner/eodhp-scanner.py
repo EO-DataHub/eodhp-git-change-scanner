@@ -63,34 +63,34 @@ class Scanner:
             self.s3 = boto3.resource("s3")
 
     def finish(self):
-        # client = pulsar.Client(os.environ.get("PULSAR_URL"))
-        # producer = client.create_producer(topic="harvested", producer_name="git_change_scanner")
-        #
-        # try:
-        message_information = {
-            "id": self.harvester_id,
-            "workspace": self.workspace,
-            "repository": self.repo_name,
-            "branch": self.branch,
-            "bucket_name": self.s3_bucket_name,
-            "added_keys": self.added_files,
-            "updated_keys": self.updated_files,
-            "deleted_keys": self.deleted_files,
-            "source": "/",
-            "target": self.target,
-        }
+        client = pulsar.Client(os.environ.get("PULSAR_URL"))
+        producer = client.create_producer(topic="harvested", producer_name="git_change_scanner")
 
-        logging.info(message_information)
+        try:
+            message_information = {
+                "id": self.harvester_id,
+                "workspace": self.workspace,
+                "repository": self.repo_name,
+                "branch": self.branch,
+                "bucket_name": self.s3_bucket_name,
+                "added_keys": self.added_files,
+                "updated_keys": self.updated_files,
+                "deleted_keys": self.deleted_files,
+                "source": "/",
+                "target": self.target,
+            }
 
-        #     msg = json.dumps(message_information)
-        #     producer.send(msg.encode("utf-8"))
-        # except Exception:
-        #     msg = "Harvester error"
-        #     producer.send(msg.encode("utf-8"))
-        # finally:
-        #     producer.close()
-        #     client.close()
-        #     logging.debug("Complete")
+            logging.info(message_information)
+
+            msg = json.dumps(message_information)
+            producer.send(msg.encode("utf-8"))
+        except Exception:
+            msg = "Harvester error"
+            producer.send(msg.encode("utf-8"))
+        finally:
+            producer.close()
+            client.close()
+            logging.debug("Complete")
 
     def scan_file(self, file_name, data=None):
         local_path = f"{self.local_folder}/github.com/{self.repo_name}/{file_name}"
