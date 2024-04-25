@@ -49,8 +49,10 @@ class Scanner:
         self.target = args.get("target", None)
 
         logging.info("ssssssssssssssssssssss")
-        logging.info(args)
         logging.info(self.__dict__)
+        logging.info(args)
+        logging.info(args.get("harvester_id", None))
+        logging.info(args["harvester_id"])
 
         self.s3_prefix = "/".join([args["s3_prefix"], self.workspace, self.repo_name, self.branch])
 
