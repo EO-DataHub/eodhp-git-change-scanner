@@ -48,6 +48,10 @@ class Scanner:
         self.source = args.get("source", "/")
         self.target = args.get("target", None)
 
+        print('ssssssssssssssssssssss')
+        print(args)
+        print(self.__dict__)
+
         self.s3_prefix = "/".join([args["s3_prefix"], self.workspace, self.repo_name, self.branch])
 
     def initialise_s3(self):
