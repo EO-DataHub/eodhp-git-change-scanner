@@ -48,7 +48,7 @@ class Scanner:
         self.source = args.get("source", "/")
         self.target = args.get("target", None)
 
-        print('ssssssssssssssssssssss')
+        print("ssssssssssssssssssssss")
         print(args)
         print(self.__dict__)
 
