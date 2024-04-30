@@ -39,7 +39,7 @@ class Scanner:
         self.initialise_s3()
 
         args = kwargs["kwargs"]
-        self.harvester_id = args.get("harvester-id", None)
+        self.harvester_id = args.get("harvester_id", None)
         self.s3_bucket_name = args["s3_bucket"]
         self.repo_name = urllib.parse.urlparse(args["repourl"]).path.strip("/")
         self.branch = args.get("branch", "main")
