@@ -1,11 +1,11 @@
-import json
+# import json
 import logging
 import os
 import urllib
 
 import boto3
 import botocore
-import pulsar
+# import pulsar
 import time
 
 logger = logging.getLogger(__name__)
