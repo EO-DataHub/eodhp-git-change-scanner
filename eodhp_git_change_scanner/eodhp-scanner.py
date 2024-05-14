@@ -67,7 +67,9 @@ class Scanner:
             identifier = "_" + os.getenv("TOPIC")
         else:
             identifier = ""
-        producer = client.create_producer(topic="harvested", producer_name=f"git_change_scanner{identifier}")
+        producer = client.create_producer(
+            topic="harvested", producer_name=f"git_change_scanner{identifier}"
+        )
 
         try:
             message_information = {
