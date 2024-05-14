@@ -63,7 +63,11 @@ class Scanner:
 
     def finish(self):
         client = pulsar.Client(os.environ.get("PULSAR_URL"))
-        producer = client.create_producer(topic="harvested", producer_name="git_change_scanner")
+        if os.getenv("TOPIC"):
+            identifier = "_" + os.getenv("TOPIC")
+        else:
+            identifier = ""
+        producer = client.create_producer(topic="harvested", producer_name=f"git_change_scanner{identifier}")
 
         try:
             message_information = {
