@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 import urllib
 
 import boto3
@@ -96,6 +97,8 @@ class Scanner:
             producer.close()
             client.close()
             logging.debug("Complete")
+
+        time.sleep(600)
 
     def scan_file(self, file_name, data=None):
         local_path = f"{self.local_folder}/github.com/{self.repo_name}/{file_name}"
