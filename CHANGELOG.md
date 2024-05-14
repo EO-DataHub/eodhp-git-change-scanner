@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.3 (2024-05-14)
+- Add harvester identification via optional TOPIC environment variable
+
 ## v0.1.2 (2024-04-29)
 - Use latest configscanning
 
