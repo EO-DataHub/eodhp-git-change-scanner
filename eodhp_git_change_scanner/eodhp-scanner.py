@@ -1,7 +1,7 @@
 import json
 import logging
-import time
 import os
+import time
 import urllib
 
 import boto3
