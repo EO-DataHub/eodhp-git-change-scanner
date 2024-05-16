@@ -68,7 +68,7 @@ class Scanner:
         else:
             identifier = ""
         producer = client.create_producer(
-            topic="harvested", producer_name=f"git_change_scanner{identifier}"
+            topic=f"harvested{identifier}", producer_name=f"git_change_scanner"
         )
 
         try:

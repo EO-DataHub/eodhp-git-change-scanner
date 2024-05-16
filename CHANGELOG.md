@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.4 (2024-05-14)
+- Extend topic to rest of pulsar message
+
 ## v0.1.3 (2024-05-14)
 - Add harvester identification via optional TOPIC environment variable
 

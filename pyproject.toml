@@ -14,7 +14,7 @@
 
 [project]
 name = "eodhp-git-change-scanner"
-version = "0.1.0"
+version = "0.1.4"
 description = "Collects and updates S3 buckets from GitHub repositories"
 readme = "README.md"
 
