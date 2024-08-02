@@ -4,15 +4,21 @@
 #
 #    pip-compile
 #
-boto3==1.34.149
+boto3==1.34.152
     # via eodhp-git-change-scanner (pyproject.toml)
-botocore==1.34.149
+botocore==1.34.152
     # via
     #   boto3
     #   eodhp-git-change-scanner (pyproject.toml)
     #   s3transfer
 certifi==2024.7.4
-    # via pulsar-client
+    # via
+    #   pulsar-client
+    #   requests
+charset-normalizer==3.3.2
+    # via requests
+idna==3.7
+    # via requests
 jmespath==1.0.1
     # via
     #   boto3
@@ -21,9 +27,13 @@ pulsar-client==3.5.0
     # via eodhp-git-change-scanner (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via botocore
+requests==2.32.3
+    # via eodhp-git-change-scanner (pyproject.toml)
 s3transfer==0.10.2
     # via boto3
 six==1.16.0
     # via python-dateutil
 urllib3==2.2.2
-    # via botocore
+    # via
+    #   botocore
+    #   requests
