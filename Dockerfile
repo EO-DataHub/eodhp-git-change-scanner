@@ -18,7 +18,7 @@ WORKDIR /eodhp-git-change-scanner
 ADD requirements.txt ./
 ADD pyproject.toml ./
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install -r requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install "git+https://github.com/EO-DataHub/configscanning.git@v0.1.3"
+RUN --mount=type=cache,target=/root/.cache/pip pip3 install "git+https://github.com/EO-DataHub/configscanning.git@v0.1.4"
 ADD eodhp_git_change_scanner ./eodhp_git_change_scanner/
 
 CMD python -m configscanning.git_change_scanner $1 $2
