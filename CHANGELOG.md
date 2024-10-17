@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.5 (2024-10-17)
+- Bump configscanning version for latest changes
+
 ## v0.1.4 (2024-05-14)
 - Extend topic to rest of pulsar message
 
