@@ -69,7 +69,6 @@ class Scanner:
         else:
             self.s3 = boto3.resource("s3")
 
-
     def send_message(self, client, producer, message, end=False):
         try:
             logging.info(message)
@@ -84,14 +83,13 @@ class Scanner:
                 client.close()
                 logging.debug("Complete")
 
-
     def finish(self):
         client = pulsar.Client(os.environ.get("PULSAR_URL"))
         if os.getenv("TOPIC"):
             identifier = "_" + os.getenv("TOPIC")
         else:
             identifier = ""
-            
+
         # STAC Producer
         producer = client.create_producer(
             topic=f"harvested{identifier}", producer_name=f"git_change_scanner{identifier}"
@@ -145,14 +143,14 @@ class Scanner:
             try:  # s3 file exists and is updated
                 self.s3.Object(self.s3_bucket_name, f"{self.s3_prefix}/{file_name}").load()
                 update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
-                if file_name == "annotations.json":
+                if file_name.endswith("-annotations.json"):
                     self.updated_annotations.append(f"{self.s3_prefix}/{file_name}")
                 else:
                     self.updated_files.append(f"{self.s3_prefix}/{file_name}")
             except botocore.exceptions.ClientError:  # s3 file doesn't exist and is added
                 update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
                 self.added_files.append(f"{self.s3_prefix}/{file_name}")
-                if file_name == "annotations.json":
+                if file_name.endswith("-annotations.json"):
                     self.added_annotations.append(f"{self.s3_prefix}/{file_name}")
                 else:
                     self.added_files.append(f"{self.s3_prefix}/{file_name}")
@@ -160,7 +158,7 @@ class Scanner:
         else:  # s3 file is deleted
             delete_file(s3_path, self.s3_bucket_name, self.s3)
             self.deleted_files.append(f"{self.s3_prefix}/{file_name}")
-            if file_name == "annotations.json":
+            if file_name.endswith("-annotations.json"):
                 self.deleted_annotations.append(f"{self.s3_prefix}/{file_name}")
             else:
                 self.deleted_files.append(f"{self.s3_prefix}/{file_name}")
