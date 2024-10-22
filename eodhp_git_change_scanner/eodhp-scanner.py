@@ -101,39 +101,42 @@ class Scanner:
             producer_name=f"git_change_scanner_annotations{identifier}",
         )
 
-        # Construct STAC Pulsar message
-        stac_message_information = {
-            "id": self.harvester_id,
-            "workspace": self.workspace,
-            "repository": self.repo_name,
-            "branch": self.branch,
-            "bucket_name": self.s3_bucket_name,
-            "added_keys": self.added_files,
-            "updated_keys": self.updated_files,
-            "deleted_keys": self.deleted_files,
-            "source": self.source,
-            "target": self.target,
-        }
-
-        # Construct Annotations Pulsar message
-        annotations_message_information = {
-            "id": self.harvester_id,
-            "workspace": self.workspace,
-            "repository": self.repo_name,
-            "branch": self.branch,
-            "bucket_name": self.s3_bucket_name,
-            "added_keys": self.added_annotations,
-            "updated_keys": self.updated_annotations,
-            "deleted_keys": self.deleted_annotations,
-            "source": self.source,
-            "target": self.target,
-        }
-
         # Send messages to Pulsar
-        logging.info("Sending STAC Data via Pulsar")
-        self.send_message(client, producer, stac_message_information)
-        logging.info("Sending Annotations Data via Pulsar")
-        self.send_message(client, producer_annotations, annotations_message_information, end=True)
+        if self.added_files or self.updated_files or self.deleted_files:
+            logging.info("Sending STAC Data via Pulsar")
+            # Construct STAC Pulsar message
+            stac_message_information = {
+                "id": self.harvester_id,
+                "workspace": self.workspace,
+                "repository": self.repo_name,
+                "branch": self.branch,
+                "bucket_name": self.s3_bucket_name,
+                "added_keys": self.added_files,
+                "updated_keys": self.updated_files,
+                "deleted_keys": self.deleted_files,
+                "source": self.source,
+                "target": self.target,
+            }
+            self.send_message(client, producer, stac_message_information)
+
+        if self.added_annotations or self.updated_annotations or self.deleted_annotations:
+            logging.info("Sending Annotations Data via Pulsar")
+            # Construct Annotations Pulsar message
+            annotations_message_information = {
+                "id": self.harvester_id,
+                "workspace": self.workspace,
+                "repository": self.repo_name,
+                "branch": self.branch,
+                "bucket_name": self.s3_bucket_name,
+                "added_keys": self.added_annotations,
+                "updated_keys": self.updated_annotations,
+                "deleted_keys": self.deleted_annotations,
+                "source": self.source,
+                "target": self.target,
+            }
+            self.send_message(
+                client, producer_annotations, annotations_message_information, end=True
+            )
 
     def scan_file(self, file_name, data=None):
         local_path = f"{self.local_folder}/github.com/{self.repo_name}/{file_name}"
@@ -149,7 +152,6 @@ class Scanner:
                     self.updated_files.append(f"{self.s3_prefix}/{file_name}")
             except botocore.exceptions.ClientError:  # s3 file doesn't exist and is added
                 update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
-                self.added_files.append(f"{self.s3_prefix}/{file_name}")
                 if str(file_name).endswith("-annotations.json"):
                     self.added_annotations.append(f"{self.s3_prefix}/{file_name}")
                 else:
@@ -157,7 +159,6 @@ class Scanner:
 
         else:  # s3 file is deleted
             delete_file(s3_path, self.s3_bucket_name, self.s3)
-            self.deleted_files.append(f"{self.s3_prefix}/{file_name}")
             if str(file_name).endswith("-annotations.json"):
                 self.deleted_annotations.append(f"{self.s3_prefix}/{file_name}")
             else:
