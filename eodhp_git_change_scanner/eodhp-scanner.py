@@ -48,7 +48,13 @@ class Scanner:
 
         args = kwargs["kwargs"]
         self.harvester_id = args.get("harvester_id", None)
-        self.s3_bucket_name = args["s3_bucket"]
+        if "s3_bucket" in args:
+            self.s3_bucket_name = args["s3_bucket"]
+        else:
+            try:
+                self.s3_bucket_name = os.environ["S3_BUCKET"]
+            except KeyError:
+                raise KeyError("S3_BUCKET not set")
         self.repo_name = urllib.parse.urlparse(args["repourl"]).path.strip("/")
         self.branch = args.get("branch", "main")
         self.workspace = args.get("workspace_namespace", "workspace")
