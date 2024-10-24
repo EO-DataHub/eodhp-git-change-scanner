@@ -53,8 +53,8 @@ class Scanner:
         else:
             try:
                 self.s3_bucket_name = os.environ["S3_BUCKET"]
-            except KeyError:
-                raise KeyError("S3_BUCKET not set")
+            except KeyError as err:
+                raise KeyError("S3_BUCKET not set") from err
         self.repo_name = urllib.parse.urlparse(args["repourl"]).path.strip("/")
         self.branch = args.get("branch", "main")
         self.workspace = args.get("workspace_namespace", "workspace")
