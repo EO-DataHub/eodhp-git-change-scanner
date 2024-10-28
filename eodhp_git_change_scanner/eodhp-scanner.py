@@ -31,16 +31,30 @@ def delete_file(path: str, bucket_name: str, s3: boto3.resource) -> None:
 
 class Scanner:
     def __init__(self, **kwargs):
+        # Lists of STAC files
         self.added_files = []
         self.updated_files = []
         self.deleted_files = []
+
+        # Lists of Annotations files
+        self.added_annotations = []
+        self.updated_annotations = []
+        self.deleted_annotations = []
+
+        # S3 Client
         self.s3 = None
 
         self.initialise_s3()
 
         args = kwargs["kwargs"]
         self.harvester_id = args.get("harvester_id", None)
-        self.s3_bucket_name = args["s3_bucket"]
+        if "s3_bucket" in args:
+            self.s3_bucket_name = args["s3_bucket"]
+        else:
+            try:
+                self.s3_bucket_name = os.environ["S3_BUCKET"]
+            except KeyError as err:
+                raise KeyError("S3_BUCKET not set") from err
         self.repo_name = urllib.parse.urlparse(args["repourl"]).path.strip("/")
         self.branch = args.get("branch", "main")
         self.workspace = args.get("workspace_namespace", "workspace")
@@ -61,18 +75,43 @@ class Scanner:
         else:
             self.s3 = boto3.resource("s3")
 
+    def send_message(self, client, producer, message, end=False):
+        try:
+            logging.info(message)
+            msg = json.dumps(message)
+            producer.send(msg.encode("utf-8"))
+        except Exception:
+            msg = "Harvester error"
+            producer.send(msg.encode("utf-8"))
+        finally:
+            producer.close()
+            if end:
+                client.close()
+                logging.debug("Complete")
+
     def finish(self):
         client = pulsar.Client(os.environ.get("PULSAR_URL"))
         if os.getenv("TOPIC"):
             identifier = "_" + os.getenv("TOPIC")
         else:
             identifier = ""
+
+        # STAC Producer
         producer = client.create_producer(
             topic=f"harvested{identifier}", producer_name=f"git_change_scanner{identifier}"
         )
 
-        try:
-            message_information = {
+        # Annotations Producer
+        producer_annotations = client.create_producer(
+            topic=f"harvested-annotations{identifier}",
+            producer_name=f"git_change_scanner_annotations{identifier}",
+        )
+
+        # Send messages to Pulsar
+        if self.added_files or self.updated_files or self.deleted_files:
+            logging.info("Sending STAC Data via Pulsar")
+            # Construct STAC Pulsar message
+            stac_message_information = {
                 "id": self.harvester_id,
                 "workspace": self.workspace,
                 "repository": self.repo_name,
@@ -84,18 +123,26 @@ class Scanner:
                 "source": self.source,
                 "target": self.target,
             }
+            self.send_message(client, producer, stac_message_information)
 
-            logging.info(message_information)
-
-            msg = json.dumps(message_information)
-            producer.send(msg.encode("utf-8"))
-        except Exception:
-            msg = "Harvester error"
-            producer.send(msg.encode("utf-8"))
-        finally:
-            producer.close()
-            client.close()
-            logging.debug("Complete")
+        if self.added_annotations or self.updated_annotations or self.deleted_annotations:
+            logging.info("Sending Annotations Data via Pulsar")
+            # Construct Annotations Pulsar message
+            annotations_message_information = {
+                "id": self.harvester_id,
+                "workspace": self.workspace,
+                "repository": self.repo_name,
+                "branch": self.branch,
+                "bucket_name": self.s3_bucket_name,
+                "added_keys": self.added_annotations,
+                "updated_keys": self.updated_annotations,
+                "deleted_keys": self.deleted_annotations,
+                "source": self.source,
+                "target": self.target,
+            }
+            self.send_message(
+                client, producer_annotations, annotations_message_information, end=True
+            )
 
     def scan_file(self, file_name, data=None):
         local_path = f"{self.local_folder}/github.com/{self.repo_name}/{file_name}"
@@ -105,11 +152,20 @@ class Scanner:
             try:  # s3 file exists and is updated
                 self.s3.Object(self.s3_bucket_name, f"{self.s3_prefix}/{file_name}").load()
                 update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
-                self.updated_files.append(f"{self.s3_prefix}/{file_name}")
+                if str(file_name).endswith("-annotations.json"):
+                    self.updated_annotations.append(f"{self.s3_prefix}/{file_name}")
+                else:
+                    self.updated_files.append(f"{self.s3_prefix}/{file_name}")
             except botocore.exceptions.ClientError:  # s3 file doesn't exist and is added
                 update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
-                self.added_files.append(f"{self.s3_prefix}/{file_name}")
+                if str(file_name).endswith("-annotations.json"):
+                    self.added_annotations.append(f"{self.s3_prefix}/{file_name}")
+                else:
+                    self.added_files.append(f"{self.s3_prefix}/{file_name}")
 
         else:  # s3 file is deleted
             delete_file(s3_path, self.s3_bucket_name, self.s3)
-            self.deleted_files.append(f"{self.s3_prefix}/{file_name}")
+            if str(file_name).endswith("-annotations.json"):
+                self.deleted_annotations.append(f"{self.s3_prefix}/{file_name}")
+            else:
+                self.deleted_files.append(f"{self.s3_prefix}/{file_name}")
