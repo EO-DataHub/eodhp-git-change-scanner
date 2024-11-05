@@ -19,7 +19,17 @@ def update_file(
     """Updates file in S3 from local directory"""
     logging.info(f"Updating {local_path} into {s3_bucket_name} {s3_path}")
 
-    s3.Bucket(s3_bucket_name).upload_file(local_path, s3_path)
+    # Determine content type based on file extension
+    if local_path.endswith(".html"):
+        content_type = "text/html"
+    elif local_path.endswith(".txt"):
+        content_type = "text/plain"
+    else:
+        content_type = "binary/octet-stream"  # Default for other file types
+
+    s3.Bucket(s3_bucket_name).upload_file(
+        local_path, s3_path, ExtraArgs={"ContentType": content_type}
+    )
 
 
 def delete_file(path: str, bucket_name: str, s3: boto3.resource) -> None:
