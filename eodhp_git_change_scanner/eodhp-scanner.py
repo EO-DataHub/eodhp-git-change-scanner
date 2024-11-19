@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import urllib
+from pathlib import Path
 
 import boto3
 import botocore
@@ -55,6 +56,7 @@ class Scanner:
                 self.s3_bucket_name = os.environ["S3_BUCKET"]
             except KeyError as err:
                 raise KeyError("S3_BUCKET not set") from err
+        self.s3_bucket_access_policy_name = os.getenv("S3_BUCKET_ACCESS_POLICY_NAME", None)
         self.repo_name = urllib.parse.urlparse(args["repourl"]).path.strip("/")
         self.branch = args.get("branch", "main")
         self.workspace = args.get("workspace_namespace", "workspace")
@@ -144,28 +146,39 @@ class Scanner:
                 client, producer_annotations, annotations_message_information, end=True
             )
 
-    def scan_file(self, file_name, data=None):
+    def scan_file(self, file_name: Path, data=None):
+        file_name = str(file_name)
         local_path = f"{self.local_folder}/github.com/{self.repo_name}/{file_name}"
         s3_path = f"{self.s3_prefix}/{file_name}"
 
         if os.path.exists(local_path):
             try:  # s3 file exists and is updated
-                self.s3.Object(self.s3_bucket_name, f"{self.s3_prefix}/{file_name}").load()
-                update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
-                if str(file_name).endswith("-annotations.json"):
-                    self.updated_annotations.append(f"{self.s3_prefix}/{file_name}")
+                if file_name.endswith("-access_policy.json"):
+                    self.s3.Object(self.s3_bucket_access_policy_name, file_name).load()
+                    update_file(local_path, file_name, self.s3_bucket_access_policy_name, self.s3)
                 else:
-                    self.updated_files.append(f"{self.s3_prefix}/{file_name}")
+                    self.s3.Object(self.s3_bucket_name, s3_path).load()
+                    update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
+                    if file_name.endswith("-annotations.json"):
+                        self.updated_annotations.append(s3_path)
+                    else:
+                        self.updated_files.append(s3_path)
             except botocore.exceptions.ClientError:  # s3 file doesn't exist and is added
-                update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
-                if str(file_name).endswith("-annotations.json"):
-                    self.added_annotations.append(f"{self.s3_prefix}/{file_name}")
+                if file_name.endswith("-access_policy.json"):
+                    update_file(local_path, file_name, self.s3_bucket_access_policy_name, self.s3)
                 else:
-                    self.added_files.append(f"{self.s3_prefix}/{file_name}")
+                    update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
+                    if file_name.endswith("-annotations.json"):
+                        self.added_annotations.append(s3_path)
+                    else:
+                        self.added_files.append(s3_path)
 
         else:  # s3 file is deleted
-            delete_file(s3_path, self.s3_bucket_name, self.s3)
-            if str(file_name).endswith("-annotations.json"):
-                self.deleted_annotations.append(f"{self.s3_prefix}/{file_name}")
+            if file_name.endswith("-access_policy.json"):
+                delete_file(file_name, self.s3_bucket_access_policy_name, self.s3)
             else:
-                self.deleted_files.append(f"{self.s3_prefix}/{file_name}")
+                delete_file(s3_path, self.s3_bucket_name, self.s3)
+                if file_name.endswith("-annotations.json"):
+                    self.deleted_annotations.append(s3_path)
+                else:
+                    self.deleted_files.append(s3_path)
