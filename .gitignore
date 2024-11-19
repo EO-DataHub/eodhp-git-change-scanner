@@ -1,0 +1,10 @@
+*.env
+*.pyc
+
+__pycache__/
+.venv/
+.vscode/
+*.egg-info*
+
+.make-venv-installed
+.pre-commit-config.yaml
