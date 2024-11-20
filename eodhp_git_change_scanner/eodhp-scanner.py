@@ -52,11 +52,12 @@ class Scanner:
         if "s3_bucket" in args:
             self.s3_bucket_name = args["s3_bucket"]
         else:
-            try:
-                self.s3_bucket_name = os.environ["S3_BUCKET"]
-            except KeyError as err:
-                raise KeyError("S3_BUCKET not set") from err
-        self.s3_bucket_access_policy_name = os.getenv("S3_BUCKET_ACCESS_POLICY_NAME", None)
+            self.s3_bucket_name = os.getenv("S3_BUCKET")
+        if self.s3_bucket_name is None:
+            raise KeyError("S3_BUCKET not set")
+        self.s3_bucket_access_policy_name = os.getenv("S3_BUCKET_ACCESS_POLICY_NAME")
+        if self.s3_bucket_access_policy_name is None:
+            raise KeyError("S3_BUCKET_ACCESS_POLICY_NAME not set")
         self.repo_name = urllib.parse.urlparse(args["repourl"]).path.strip("/")
         self.branch = args.get("branch", "main")
         self.workspace = args.get("workspace_namespace", "workspace")
