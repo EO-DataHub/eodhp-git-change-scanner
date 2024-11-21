@@ -7,6 +7,8 @@ from pathlib import Path
 import boto3
 import botocore
 import pulsar
+import requests
+from html_sanitizer import Sanitizer
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,42 @@ def update_file(
     s3.Bucket(s3_bucket_name).upload_file(
         local_path, s3_path, ExtraArgs={"ContentType": content_type}
     )
+
+
+def update_licence_file(
+    local_path: str,
+    s3_path: str,
+    s3_bucket_name: str,
+    s3: boto3.resource,
+) -> None:
+    """Updates file in S3 from local directory"""
+    logging.info(f"Updating {local_path} into {s3_bucket_name} {s3_path}")
+
+    # Determine content type based on file extension
+    if local_path.endswith(".html"):
+        content_type = "text/html"
+        # Sanitize HTML content
+        with open(local_path, "r") as file:
+            html_content = file.read()
+        sanitizer = Sanitizer()
+        sanitized_html = sanitizer.sanitize(html_content)
+        with open(local_path, "w") as file:
+            file.write(sanitized_html)
+    elif local_path.endswith(".txt"):
+        content_type = "text/plain"
+    else:
+        content_type = "binary/octet-stream"  # Default for other file types
+
+    try:
+        s3.Object(s3_bucket_name, s3_path).load()
+        logging.info(
+            f"File {s3_path} already exists in S3 bucket {s3_bucket_name}. Skipping upload."
+        )
+    except botocore.exceptions.ClientError:
+        s3.Bucket(s3_bucket_name).upload_file(
+            local_path, s3_path, ExtraArgs={"ContentType": content_type}
+        )
+        logging.info(f"Uploaded file {local_path} to S3 bucket {s3_bucket_name} at {s3_path}.")
 
 
 def delete_file(path: str, bucket_name: str, s3: boto3.resource) -> None:
@@ -74,7 +112,8 @@ class Scanner:
         self.local_folder = args["dest"]
         self.source = args.get("source", "/")
         self.target = args.get("target", None)
-
+        self.hosted_zone = os.getenv("HOSTED_ZONE")
+        self.spdx_bucket_name = os.getenv("SPDX_S3_BUCKET")
         self.s3_prefix = "/".join([args["s3_prefix"], self.workspace, self.repo_name, self.branch])
 
     def initialise_s3(self):
@@ -84,9 +123,10 @@ class Scanner:
                 aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
             )
             self.s3 = session.resource("s3")
-
+            self.s3_client = session.client("s3")
         else:
             self.s3 = boto3.resource("s3")
+            self.s3_client = boto3.client("s3")
 
     def send_message(self, client, producer, message, end=False):
         try:
@@ -157,6 +197,43 @@ class Scanner:
                 client, producer_annotations, annotations_message_information, end=True
             )
 
+    def process_license_link(
+        self,
+        local_path: str,
+        href: str,
+        workspace: str,
+        s3_bucket_name: str,
+        s3: boto3.resource,
+        hosted_zone: str,
+    ) -> str:
+        """Processes the license link and uploads the license file to S3 if necessary"""
+        if href.startswith("http"):
+            # Download the file from the URL
+            response = requests.get(href)
+            if response.status_code == 200:
+                license_local_path = os.path.join("/tmp", os.path.basename(href))
+                with open(license_local_path, "wb") as file:
+                    file.write(response.content)
+            else:
+                logging.error(f"Failed to download file from {href}")
+                return href
+        else:
+            license_local_path = os.path.normpath(os.path.join(os.path.dirname(local_path), href))
+
+        if os.path.exists(license_local_path):
+            license_s3_path = f"api/catalogue/licences/{workspace}/{os.path.basename(href)}"
+            try:
+                self.s3_client.head_object(Bucket=s3_bucket_name, Key=license_s3_path)
+                logging.info(
+                    f"File {license_s3_path} already exists in S3 bucket {s3_bucket_name}. Skipping upload."
+                )
+            except botocore.exceptions.ClientError as e:
+                if e.response["Error"]["Code"] != "404":
+                    raise
+                update_licence_file(license_local_path, license_s3_path, s3_bucket_name, s3)
+            return f"https://{hosted_zone}/{license_s3_path}"
+        return href
+
     def scan_file(self, file_name: Path, data=None):
         file_name = str(file_name)
         local_path = f"{self.local_folder}/github.com/{self.repo_name}/{file_name}"
@@ -183,6 +260,26 @@ class Scanner:
                         self.added_annotations.append(s3_path)
                     else:
                         self.added_files.append(s3_path)
+        if local_path.endswith(".json"):
+            with open(local_path, "r") as file:
+                content = json.load(file)
+                if content.get("type") == "Collection":
+                    for link in content.get("links", []):
+                        if link.get("rel") == "license":
+                            href = link.get("href")
+                            if href:
+                                new_href = self.process_license_link(
+                                    local_path,
+                                    href,
+                                    self.workspace,
+                                    self.spdx_bucket_name,
+                                    self.s3,
+                                    self.hosted_zone,
+                                )
+                                link["href"] = new_href
+                    with open(local_path, "w") as updated_file:
+                        json.dump(content, updated_file, indent=2)
+                    print(f"Processed license links in {file_name}")
 
         else:  # s3 file is deleted
             if file_name.endswith("-access_policy.json"):
