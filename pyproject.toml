@@ -67,7 +67,8 @@ dependencies = [
     "boto3",
     "botocore",
     "pulsar-client",
-    "requests>=2.32.0"
+    "requests>=2.32.0",
+    "html-sanitizer",
 ]
 
 # List additional groups of dependencies here (e.g. development
