@@ -9,6 +9,7 @@ import boto3
 import botocore
 import pulsar
 import requests
+from botocore.exceptions import ClientError
 from html_sanitizer import Sanitizer
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ def update_licence_file(
     local_path: str,
     s3_path: str,
     s3_bucket_name: str,
-    s3: boto3.resource,
+    s3_client: boto3.client,
 ) -> None:
     """Updates file in S3 from local directory"""
     logging.info(f"Updating {local_path} into {s3_bucket_name} {s3_path}")
@@ -48,29 +49,44 @@ def update_licence_file(
     # Determine content type based on file extension
     if local_path.endswith(".html"):
         content_type = "text/html"
-        # Sanitize HTML content
-        with open(local_path, "r+") as file:
+        # Sanitize HTML content in memory
+        with open(local_path, "r") as file:
             html_content = file.read()
-            sanitizer = Sanitizer()
-            sanitized_html = sanitizer.sanitize(html_content)
-            file.seek(0)
-            file.write(sanitized_html)
-            file.truncate()
+        sanitizer = Sanitizer()
+        result = sanitizer.sanitize(html_content)
     elif local_path.endswith(".txt"):
         content_type = "text/plain"
+        with open(local_path, "r") as file:
+            result = file.read()
     else:
         content_type = "binary/octet-stream"  # Default for other file types
+        with open(local_path, "rb") as file:
+            result = file.read()
 
     try:
-        s3.Object(s3_bucket_name, s3_path).load()
+        s3_client.head_object(Bucket=s3_bucket_name, Key=s3_path)
         logging.info(
             f"File {s3_path} already exists in S3 bucket {s3_bucket_name}. Skipping upload."
         )
-    except botocore.exceptions.ClientError:
-        s3.Bucket(s3_bucket_name).upload_file(
-            local_path, s3_path, ExtraArgs={"ContentType": content_type}
-        )
-        logging.info(f"Uploaded file {local_path} to S3 bucket {s3_bucket_name} at {s3_path}.")
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "404":
+            if content_type == "binary/octet-stream":
+                s3_client.put_object(
+                    Bucket=s3_bucket_name,
+                    Key=s3_path,
+                    Body=result,
+                    ContentType=content_type,
+                )
+            else:
+                s3_client.put_object(
+                    Bucket=s3_bucket_name,
+                    Key=s3_path,
+                    Body=result.encode("utf-8"),
+                    ContentType=content_type,
+                )
+            logging.info(f"Uploaded file {local_path} to S3 bucket {s3_bucket_name} at {s3_path}.")
+        else:
+            raise
 
 
 def delete_file(path: str, bucket_name: str, s3: boto3.resource) -> None:
@@ -239,7 +255,9 @@ class Scanner:
             except botocore.exceptions.ClientError as e:
                 if e.response["Error"]["Code"] != "404":
                     raise
-                update_licence_file(license_local_path, license_s3_path, s3_bucket_name, s3)
+                update_licence_file(
+                    license_local_path, license_s3_path, s3_bucket_name, self.s3_client
+                )
             return f"https://{hosted_zone}/{license_s3_path}"
         return href
 
