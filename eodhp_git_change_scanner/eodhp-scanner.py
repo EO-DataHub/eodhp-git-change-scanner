@@ -340,21 +340,3 @@ class Scanner:
                     self.deleted_annotations.append(s3_path)
                 else:
                     self.deleted_files.append(s3_path)
-
-    # def process_collection_licenses(self, local_path: str, content: dict) -> None:
-    #     """Processes license links in a Collection type file"""
-    #     for link in content.get("links", []):
-    #         if link.get("rel") == "license":
-    #             href = link.get("href")
-    #             if href:
-    #                 new_href = self.process_license_link(
-    #                     local_path,
-    #                     href,
-    #                     self.workspace,
-    #                     self.spdx_bucket_name,
-    #                     self.s3,
-    #                     self.hosted_zone,
-    #                 )
-    #                 link["href"] = new_href
-    #     with open(local_path, "w") as updated_file:
-    #         json.dump(content, updated_file, indent=2)
