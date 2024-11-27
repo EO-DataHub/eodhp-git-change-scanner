@@ -273,7 +273,6 @@ class Scanner:
                     update_file(local_path, file_name, self.s3_bucket_access_policy_name, self.s3)
                 else:
                     self.s3.Object(self.s3_bucket_name, s3_path).load()
-                    update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
                     if file_name.endswith("-annotations.json"):
                         self.updated_annotations.append(s3_path)
                     else:
@@ -282,13 +281,29 @@ class Scanner:
                             with open(local_path, "r") as file:
                                 content = json.load(file)
                                 if content.get("type") == "Collection":
-                                    self.process_collection_licenses(local_path, content)
+                                    for link in content.get("links", []):
+                                        if link.get("rel") == "license":
+                                            new_href = self.process_license_link(
+                                                local_path,
+                                                link.get("href"),
+                                                self.workspace,
+                                                self.spdx_bucket_name,
+                                                self.s3,
+                                                self.hosted_zone,
+                                            )
+                                            link["href"] = new_href
+                                    # Serialize the modified content to a JSON string
+                                    temp_path = os.path.join("/tmp", local_path)
+                                    with open(temp_path, "w") as updated_file:
+                                        json.dump(content, updated_file, indent=2)
+                                    local_path = temp_path
                                     print(f"Processed license links in {file_name}")
+                    update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
+
             except botocore.exceptions.ClientError:  # s3 file doesn't exist and is added
                 if file_name.endswith("-access_policy.json"):
                     update_file(local_path, file_name, self.s3_bucket_access_policy_name, self.s3)
                 else:
-                    update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
                     if file_name.endswith("-annotations.json"):
                         self.added_annotations.append(s3_path)
                     else:
@@ -297,8 +312,25 @@ class Scanner:
                             with open(local_path, "r") as file:
                                 content = json.load(file)
                                 if content.get("type") == "Collection":
-                                    self.process_collection_licenses(local_path, content)
+                                    for link in content.get("links", []):
+                                        if link.get("rel") == "license":
+                                            new_href = self.process_license_link(
+                                                local_path,
+                                                link.get("href"),
+                                                self.workspace,
+                                                self.spdx_bucket_name,
+                                                self.s3,
+                                                self.hosted_zone,
+                                            )
+                                            link["href"] = new_href
+                                    # Serialize the modified content to a JSON string
+                                    temp_path = os.path.join("/tmp", local_path)
+                                    with open(temp_path, "w") as updated_file:
+                                        json.dump(content, updated_file, indent=2)
+                                    local_path = temp_path
                                     print(f"Processed license links in {file_name}")
+                    update_file(local_path, s3_path, self.s3_bucket_name, self.s3)
+
         else:  # s3 file is deleted
             if file_name.endswith("-access_policy.json"):
                 delete_file(file_name, self.s3_bucket_access_policy_name, self.s3)
@@ -309,20 +341,20 @@ class Scanner:
                 else:
                     self.deleted_files.append(s3_path)
 
-    def process_collection_licenses(self, local_path: str, content: dict) -> None:
-        """Processes license links in a Collection type file"""
-        for link in content.get("links", []):
-            if link.get("rel") == "license":
-                href = link.get("href")
-                if href:
-                    new_href = self.process_license_link(
-                        local_path,
-                        href,
-                        self.workspace,
-                        self.spdx_bucket_name,
-                        self.s3,
-                        self.hosted_zone,
-                    )
-                    link["href"] = new_href
-        with open(local_path, "w") as updated_file:
-            json.dump(content, updated_file, indent=2)
+    # def process_collection_licenses(self, local_path: str, content: dict) -> None:
+    #     """Processes license links in a Collection type file"""
+    #     for link in content.get("links", []):
+    #         if link.get("rel") == "license":
+    #             href = link.get("href")
+    #             if href:
+    #                 new_href = self.process_license_link(
+    #                     local_path,
+    #                     href,
+    #                     self.workspace,
+    #                     self.spdx_bucket_name,
+    #                     self.s3,
+    #                     self.hosted_zone,
+    #                 )
+    #                 link["href"] = new_href
+    #     with open(local_path, "w") as updated_file:
+    #         json.dump(content, updated_file, indent=2)
