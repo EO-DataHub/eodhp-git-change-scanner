@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import os
+import time
 import urllib
 from pathlib import Path
 
@@ -159,6 +160,7 @@ class Scanner:
             if end:
                 client.close()
                 logging.debug("Complete")
+            time.sleep(600)
 
     def finish(self):
         client = pulsar.Client(os.environ.get("PULSAR_URL"))
