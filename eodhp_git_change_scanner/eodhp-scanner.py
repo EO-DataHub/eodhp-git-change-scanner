@@ -160,6 +160,7 @@ class Scanner:
             if end:
                 client.close()
                 logging.debug("Complete")
+            logging.error("Sleeping...")
             time.sleep(600)
 
     def finish(self):
