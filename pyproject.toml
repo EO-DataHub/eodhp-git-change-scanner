@@ -21,7 +21,7 @@ readme = "README.md"
 # Our target version is Python 3.11, but it may work with earlier versions.
 requires-python = ">=3.11"
 
-#license = {file = "LICENSE"}
+license = {file = "LICENSE"}
 
 # This should be your name or the name of the organization who originally
 # authored the project, and a valid email address corresponding to the name
@@ -48,9 +48,7 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "Intended Audience :: Developers",
 
-  # CHANGEME Pick your license as you wish
-  "License :: OSI Approved :: Apache Software License",
-  # "License :: Other/Proprietary License",
+  "License :: OSI Approved :: BSD License",
 
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
