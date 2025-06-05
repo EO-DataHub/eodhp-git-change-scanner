@@ -1,4 +1,4 @@
-# UKEODHP Git Change Scanner
+# EODHP Git Change Scanner
 
 Scans Git repositories and harvests new or updated files into the EODHP harvest pipeline.
 
