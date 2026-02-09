@@ -3,12 +3,8 @@ name = "eodhp-git-change-scanner"
 version = "0.1.4"
 description = "Collects and updates S3 buckets from GitHub repositories"
 readme = "README.md"
-
-# Our target version is Python 3.11, but it may work with earlier versions.
-requires-python = ">=3.11"
-
+requires-python = ">=3.13,<3.14"
 license = {file = "LICENSE"}
-
 
 authors = [
   {name = "Telespazio UK Ltd", email = "hannah.collingwood@telespazio.com" }
@@ -18,124 +14,79 @@ maintainers = [
   {name = "Telespazio UK Ltd", email = "hannah.collingwood@telespazio.com" }
 ]
 
-# Classifiers help users find your project by categorizing it.
-#
-# For a list of valid classifiers, see https://pypi.org/classifiers/
 classifiers = [
-  # How mature is this project? Common values are
-  #   3 - Alpha
-  #   4 - Beta
-  #   5 - Production/Stable
   "Development Status :: 3 - Alpha",
-
-  # Indicate who your project is intended for
   "Intended Audience :: Science/Research",
   "Intended Audience :: Developers",
-
   "License :: OSI Approved :: BSD License",
-
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3 :: Only",
 ]
 
-# This field lists other packages that your project depends on to run.
-# Any package you put here will be installed by pip when your project is
-# installed, so they must be valid existing projects.
-#
-# For an analysis of this field vs pip's requirements files see:
-# https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [
     "boto3",
     "botocore",
+    "configscanning",
     "pulsar-client",
     "requests>=2.32.0",
     "html-sanitizer",
 ]
 
-# List additional groups of dependencies here (e.g. development
-# dependencies). Users will be able to install these using the "extras"
-# syntax, for example:
-#
-#   $ pip install sampleproject[dev]
-#
-# Similar to `dependencies` above, these must be valid existing
-# projects.
-[project.optional-dependencies] # Optional
+[tool.uv.sources]
+configscanning = { git = "https://github.com/EO-DataHub/configscanning.git", tag = "v0.1.4" }
+
+[dependency-groups]
 dev = [
-    "pip-tools",
+    "boto3-stubs[s3]>=1.42.44",
+    "pre-commit",
+    "pyright",
     "pytest",
-    "pytest-xdist",
     "pytest-mock",
     "pytest-watcher",
-    "black",
+    "pytest-xdist",
     "ruff",
-    "pre-commit"
+    "validate-pyproject",
 ]
 
-# List URLs that are relevant to your project
-#
-# This field corresponds to the "Project-URL" and "Home-Page" metadata fields:
-# https://packaging.python.org/specifications/core-metadata/#project-url-multiple-use
-# https://packaging.python.org/specifications/core-metadata/#home-page-optional
-#
-# Examples listed include a pattern for specifying where the package tracks
-# issues, where the source is hosted, where to say thanks to the package
-# maintainers, and where to support the project financially. The key is
-# what's used to render the link text on PyPI.
-[project.urls]  # Optional
-homepage = "https://github.com/UKEODHP/eodhp-git-change-scanner"
-repository = "https://github.com/UKEODHP/eodhp-git-change-scanner"
-changelog = "https://github.com/UKEODHP/eodhp-git-change-scanner/main/CHANGELOG.md"
+[project.urls]
+homepage = "https://github.com/EO-DataHub/eodhp-git-change-scanner"
+repository = "https://github.com/EO-DataHub/eodhp-git-change-scanner"
+changelog = "https://github.com/EO-DataHub/eodhp-git-change-scanner/main/CHANGELOG.md"
 
 [build-system]
-# These are the assumed default build requirements from pip:
-# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
-requires = ["setuptools>=69.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
-packages = [
-]
+[tool.uv]
+package = false
 
-[tool.black]
-line-length = 100
-target-version = ['py311']
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
 
 [tool.ruff]
-line-length = 110
-target-version = "py311"
-select = ["E", "F", "B", "W"]
+line-length = 119
 
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+[tool.ruff.lint]
+select = [
+    "E",    # Pycodestyle errors
+    "W",    # Pycodestyle warnings
+    "F",    # Pyflakes
+    "I",    # isort
+    "FAST", # FastAPI
+    "RUF",  # RUF-specific rules
+    "SIM",  # Simplifications
+    "B",    # Bugbear
+    "ANN",  # Annotations
+    "PLC",  # Pylint convention
+    "PLE",  # Pylint errors
+    "UP",   # pyupgrade
+    "FURB", # refurb
+    "PT",   # pytest
 ]
-
-[tool.pylint.'MESSAGES CONTROL']
-disable = '''
-    line-too-long,
-    missing-class-docstring,
-    too-many-locals,
-    too-many-instance-attributes,
-    logging-fstring-interpolation,
-'''
+ignore = [
+    "E501",   # line too long
+    "SIM108", # ternary operator
+    "SIM103", # return bool directly
+    "B008"    # function call in default argument (incompatible with FastAPI)
+]

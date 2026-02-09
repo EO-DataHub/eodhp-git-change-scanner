@@ -3,7 +3,8 @@
 Scans Git repositories and harvests new or updated files into the EODHP harvest pipeline.
 
 ## Requirements
-Ensure that configscanning is installed
+
+- [uv](https://docs.astral.sh/uv/) (for dependency management)
 
 ### Environment variables
 - `AWS_ACCESS_KEY` - AWS access key ID (optional)
@@ -22,16 +23,21 @@ python3 -m configscanning.git_change_scanner https://github.com/UKEODHP/catalogu
 make setup
 ```
 
-This will create a virtual environment called `venv`, build `requirements.txt` and
-`requirements-dev.txt` from `pyproject.toml` if they're out of date, install the Python
-and Node dependencies and install `pre-commit`.
+This will install dependencies with `uv sync` and set up `pre-commit` hooks.
 
-It's safe and fast to run `make setup` repeatedly as it will only update these things if
-they have changed.
+It's safe and fast to run `make setup` repeatedly.
 
-After `make setup` you can run `pre-commit` to run pre-commit checks on staged changes and
-`pre-commit run --all-files` to run them on all files. This replicates the linter checks that
-run from GitHub actions.
+## Development
+
+| Command | Description |
+|---------|-------------|
+| `make setup` | Install dependencies and pre-commit hooks |
+| `make test` | Run tests in watch mode |
+| `make testonce` | Run tests once |
+| `make check` | Run all linting and type checks (ruff, pyright, validate-pyproject) |
+| `make format` | Auto-fix lint issues and format code |
+| `make pre-commit` | Run pre-commit checks on staged changes |
+| `make pre-commit-all` | Run pre-commit checks on all files |
 
 
 ## Pulsar Messages
