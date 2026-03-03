@@ -6,6 +6,7 @@ import logging
 import os
 import urllib.parse
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import boto3
 import boto3.session
@@ -13,7 +14,9 @@ import pulsar
 import requests
 from botocore.exceptions import ClientError
 from html_sanitizer import Sanitizer
-from mypy_boto3_s3 import S3Client, S3ServiceResource
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client, S3ServiceResource
 
 logger = logging.getLogger(__name__)
 
