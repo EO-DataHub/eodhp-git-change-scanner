@@ -31,4 +31,6 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen
 
-CMD ["uv", "run", "--no-sync", "python", "-m", "configscanning.git_change_scanner"]
+ENV PATH="/app/.venv/bin:$PATH"
+
+CMD ["python", "-m", "configscanning.git_change_scanner"]
