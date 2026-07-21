@@ -34,11 +34,11 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-configscanning = { git = "https://github.com/EO-DataHub/configscanning.git", tag = "v0.1.4" }
+configscanning = { git = "https://github.com/EO-DataHub/configscanning.git", tag = "v0.1.6" }
 
 [dependency-groups]
 dev = [
-    "boto3-stubs[s3]==1.42.44",
+    "boto3-stubs[s3]==1.42.97",
     "pre-commit",
     "pyright",
     "pytest",
