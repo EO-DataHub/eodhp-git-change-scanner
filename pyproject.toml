@@ -3,7 +3,7 @@ name = "eodhp-git-change-scanner"
 version = "0.1.4"
 description = "Collects and updates S3 buckets from GitHub repositories"
 readme = "README.md"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.14,<3.15"
 license = {file = "LICENSE"}
 
 authors = [
@@ -38,7 +38,7 @@ configscanning = { git = "https://github.com/EO-DataHub/configscanning.git", tag
 
 [dependency-groups]
 dev = [
-    "boto3-stubs[s3]==1.42.97",
+    "boto3-stubs[s3]==1.43.72",
     "pre-commit",
     "pyright",
     "pytest",
