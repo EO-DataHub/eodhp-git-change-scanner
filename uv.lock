@@ -3,7 +3,7 @@ revision = 3
 requires-python = "==3.13.*"
 
 [options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer = "2026-08-20T13:10:36.007037Z"
 exclude-newer-span = "P7D"
 
 [[package]]
@@ -245,7 +245,7 @@ wheels = [
 [[package]]
 name = "configscanning"
 version = "0.1.0"
-source = { git = "https://github.com/EO-DataHub/configscanning.git?tag=v0.1.6#00f26d5489cb98c82181547b598532714c948710" }
+source = { git = "https://github.com/EO-DataHub/configscanning.git?tag=v0.1.7#a429d9d2f3a342bbf5d8b25f7a8e0073f2b70536" }
 dependencies = [
     { name = "boto3" },
     { name = "filelock" },
@@ -341,7 +341,7 @@ dev = [
 requires-dist = [
     { name = "boto3" },
     { name = "botocore" },
-    { name = "configscanning", git = "https://github.com/EO-DataHub/configscanning.git?tag=v0.1.6" },
+    { name = "configscanning", git = "https://github.com/EO-DataHub/configscanning.git?tag=v0.1.7" },
     { name = "html-sanitizer" },
     { name = "pulsar-client" },
     { name = "requests", specifier = ">=2.32.0" },
