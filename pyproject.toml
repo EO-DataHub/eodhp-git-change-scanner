@@ -38,7 +38,7 @@ configscanning = { git = "https://github.com/EO-DataHub/configscanning.git", tag
 
 [dependency-groups]
 dev = [
-    "boto3-stubs[s3]==1.43.78",
+    "boto3-stubs[s3]==1.43.83",
     "pre-commit",
     "pyright",
     "pytest",
